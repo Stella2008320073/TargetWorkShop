@@ -25,14 +25,15 @@ enum WeaponLibrary {
         }
     }
 
-    // 通用配件生成
+    // 通用配件生成（补全了 focus, cooling, energyEfficiency 参数）
     private static func parts(_ slot: String, base: [String], desc: String,
                               recoil: Double = 0, stability: Double = 0,
                               handling: Double = 0, hip: Double = 0,
                               vel: Double = 0, range: Double = 0,
                               fireRate: Double = 0, reload: Double = 0,
                               mag: Int = 0, variant: Int = 0,
-                              reveals: [String] = []) -> [Attachment] {
+                              reveals: [String] = [],
+                              focus: Double = 0, cooling: Double = 0, energyEfficiency: Double = 0) -> [Attachment] {
         base.enumerated().map { i, n in
             Attachment(id: "\(slot)_\(i)", slotID: slot, name: n,
                        desc: desc,
@@ -45,6 +46,9 @@ enum WeaponLibrary {
                        fireRate: fireRate * Double(i),
                        reloadSpeed: reload * Double(i),
                        magCapacity: mag * i,
+                       focus: focus * Double(i),
+                       cooling: cooling * Double(i),
+                       energyEfficiency: energyEfficiency * Double(i),
                        visualVariant: variant + i,
                        reveals: i == 0 ? reveals : [])
         }
@@ -64,14 +68,9 @@ enum WeaponLibrary {
             partsMap["mag"] = parts("mag", base: ["标准弹匣","扩容弹匣","快拔弹匣"], desc: "影响容量与换弹", mag: 2, reload: -0.15)
             partsMap["bipod"] = parts("bipod", base: ["无脚架","轻型脚架","重型脚架"], desc: "卧姿稳定", stability: 4)
             // 联动槽位
-            var extraSlots = [SlotDef(id:"rail", name:"护木导轨", zoom:1.6, anchor:.init(x:0.55,y:0.55)),
+            let extraSlots = [SlotDef(id:"rail", name:"护木导轨", zoom:1.6, anchor:.init(x:0.55,y:0.55)),
                               SlotDef(id:"riser", name:"增高架", zoom:1.7, anchor:.init(x:0.45,y:0.4)),
                               SlotDef(id:"buttpad", name:"缓冲垫", zoom:1.7, anchor:.init(x:0.15,y:0.55))]
-            extraSlots = extraSlots.map { s in
-                var s = s
-                s.anchor = s.anchor
-                return s
-            }
             var w = Weapon(id: "sn\(i)", name: n, category: .sniper,
                            fireModes: bolt ? [.boltAction] : [.semiAuto],
                            defaultMode: bolt ? .boltAction : .semiAuto,
@@ -225,7 +224,6 @@ enum WeaponLibrary {
 
     // MARK: 特殊武器 6
     static func specials() -> [Weapon] {
-        // 火箭筒、榴弹、激光各至少一把
         let defs: [(String, WeaponVisual, [String], [String:[Attachment]])] = [
             ("破城 火箭筒", WeaponVisual(barrelLen: 0.7, stockStyle: 1, magStyle: 0, scopeStyle: 2, bodyStyle: 5),
              ["scope","grip","tube","suppressor"],
@@ -290,12 +288,14 @@ enum WeaponLibrary {
         ]
         return defs.enumerated().map { i, d in
             let (name, style, vis) = d
+            _ = style
             let slots = [SlotDef(id:"blade", name:"刀身", zoom:1.7, anchor:.init(x:0.5,y:0.4)),
                          SlotDef(id:"tip", name:"刀尖", zoom:1.8, anchor:.init(x:0.8,y:0.4)),
                          SlotDef(id:"guard", name:"护手", zoom:1.6, anchor:.init(x:0.35,y:0.55)),
                          SlotDef(id:"handle", name:"握柄", zoom:1.6, anchor:.init(x:0.2,y:0.6)),
                          SlotDef(id:"weight", name:"配重", zoom:1.7, anchor:.init(x:0.1,y:0.7)),
-                         SlotDef(id:"sheath", name:"刀鞘", zoom:1.5, anchor:.init(x:0.5,y:0.8))]
+                         SlotDef(id:"sheath", name:"刀鞘", zoom:1.5, anchor:.init(x:0.5,y:0.8)),
+                         SlotDef(id:"joint", name:"联动关节", zoom:1.7, anchor:.init(x:0.3,y:0.6))]
             var pm: [String:[Attachment]] = [:]
             pm["blade"] = parts("blade", base: ["等离子强化刃身","碳纤维刃身","纳米自锐刃身"], desc: "刃身与穿透", penetration: 5, meleeRange: 3)
             pm["tip"] = parts("tip", base: ["热能聚焦刀尖","强化刀尖"], desc: "刀尖与穿透", penetration: 3)
