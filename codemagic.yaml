@@ -1,0 +1,17 @@
+workflows:
+  macos-build:
+    name: 靶场工坊 macOS 构建
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: latest
+    scripts:
+      - name: 构建应用
+        script: |
+          xcodebuild -project 靶场工坊.xcodeproj \
+            -scheme 靶场工坊 \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+    artifacts:
+      - build/Build/Products/Release/*.app
