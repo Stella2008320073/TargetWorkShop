@@ -8,19 +8,31 @@ workflows:
     scripts:
       - name: 编译并打包为 App
         script: |
-          # 1. 编译 Swift 可执行文件
+          set -e
+          
+          # 确认当前目录和文件
+          echo "当前目录: $(pwd)"
+          ls -la
+          
+          # 编译 Swift 可执行文件
           swift build -c release
           
-          # 2. 手动构建 .app 包的结构 (Codemagic 自动打包标准流程)
+          # 获取实际的可执行文件路径
+          BIN_PATH=$(swift build -c release --show-bin-path)
+          echo "二进制路径: $BIN_PATH"
+          
+          # 构建 .app 包结构
           APP_NAME="靶场工坊"
-          mkdir -p build/"${APP_NAME}.app"/Contents/MacOS
-          mkdir -p build/"${APP_NAME}.app"/Contents/Resources
+          APP_BUNDLE="build/${APP_NAME}.app"
+          rm -rf "$APP_BUNDLE"
+          mkdir -p "$APP_BUNDLE/Contents/MacOS"
+          mkdir -p "$APP_BUNDLE/Contents/Resources"
           
-          # 3. 将编译好的二进制文件拷贝进 App 包
-          cp .build/release/TargetWorkshop build/"${APP_NAME}.app"/Contents/MacOS/"${APP_NAME}"
+          # 拷贝二进制文件
+          cp "$BIN_PATH/TargetWorkshop" "$APP_BUNDLE/Contents/MacOS/${APP_NAME}"
           
-          # 4. 生成 Info.plist（这是 macOS App 运行必需的配置）
-          cat <<EOF > build/"${APP_NAME}.app"/Contents/Info.plist
+          # 生成 Info.plist
+          cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -35,6 +47,8 @@ workflows:
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
               <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
               <key>LSMinimumSystemVersion</key>
               <string>13.0</string>
               <key>NSHighResolutionCapable</key>
@@ -43,5 +57,10 @@ workflows:
           </plist>
           EOF
           
+          # 生成 PkgInfo
+          printf 'APPL????' > "$APP_BUNDLE/Contents/PkgInfo"
+          
+          echo "打包完成: $APP_BUNDLE"
+          ls -la "$APP_BUNDLE/Contents/MacOS/"
     artifacts:
       - build/*.app
